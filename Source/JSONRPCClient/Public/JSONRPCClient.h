@@ -17,28 +17,21 @@ typedef struct
 	std::map<std::string, std::string> params;
 }MessageData;
 
-
-
-class FJSONRPCClientModule : public IModuleInterface
+class JSONRPCClient
 {
-	
 	int currentId;
 
 	std::string URL;
 
 public:
 
-	/** IModuleInterface implementation */
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
-	
 	void setURL(std::string const& url)
 	{
 		currentId = 0;
 		URL = url;
 	}
 
-	void SendRPC(std::string const& method, std::map<std::string, std::string> const& params)
+	void SendRPC(std::string const& method, std::map<std::string, std::string> const& params, std::map<std::string, std::string> & result)
 	{
 		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 		TSharedPtr<FJsonObject> JsonParams = MakeShareable(new FJsonObject());
@@ -63,9 +56,17 @@ public:
 		Request->SetHeader("Content-Type", "application/json");
 		Request->SetContentAsString(OutputString);
 		Request->ProcessRequest();
+                // TODO: play a bit with signals to get the output from the request.
+                result.clear();
 	}
 
-	void SendRPC(std::string const& method, std::vector<MessageData> const& params)
+        void SendRPC(std::string const& method, std::map<std::string, std::string> const& params)
+        {
+            std::map<std::string, std::string> result;
+            SendRPC(method, params, result);
+        }
+
+	void SendRPC(std::string const& method, std::vector<MessageData> const& params, std::vector<MessageData> & response)
 	{
 		unsigned int maxK = params.size();
 		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
@@ -99,14 +100,23 @@ public:
 		FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
 
 		TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-		Request->OnProcessRequestComplete().BindRaw(this, &FJSONRPCClientModule::OnResponseReceived);
+		Request->OnProcessRequestComplete().BindRaw(this, &JSONRPCClient::OnResponseReceived);
 		Request->SetURL(URL.c_str());
 		Request->SetVerb("POST");
 		Request->SetHeader(TEXT("User-Agent"), "X-UnrealEngine-Agent");
 		Request->SetHeader("Content-Type", "application/json");
 		Request->SetContentAsString(OutputString);
 		Request->ProcessRequest();
+
+                // TODO: play a bit with signals to get the output from the request.
+                response.clear();
 	}
+
+        void SendRPC(std::string const& method, std::vector<MessageData> const& params)
+        {
+            std::vector<MessageData> response;
+            SendRPC(method, params, response);
+        }
 
 	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 	{
@@ -131,5 +141,15 @@ public:
 			// Handle error here
 		}
 	}
+
+};
+
+class FJSONRPCClientModule : public IModuleInterface
+{
 	
+public:
+
+	/** IModuleInterface implementation */
+	virtual void StartupModule() override;
+	virtual void ShutdownModule() override;
 };
