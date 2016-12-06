@@ -65,6 +65,7 @@ class JSONRPCCLIENT_API JSONRPCClient
 	TEvent reqDone;
 
 	bool allOk;
+	bool gotResponse;
 	std::vector<MessageData> response;
 
 public:
@@ -73,8 +74,9 @@ public:
 
 	~JSONRPCClient();
 
-	bool isLastRequestOk(void);
-	std::vector<MessageData>const& getResponse(void);
+	bool haveResponse(void) const;
+	bool isLastRequestOk(void) const;
+	std::vector<MessageData>const& getResponse(void) const;
 
 	void setURL(std::string const& url);
 
