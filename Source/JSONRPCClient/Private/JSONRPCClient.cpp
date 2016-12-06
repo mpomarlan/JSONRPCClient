@@ -57,11 +57,21 @@ void initEvent(TEvent & ev)
 		false,              // initial state is nonsignaled
 		TEXT("WriteEvent")  // object name
 	);
+
+	if (ev == NULL)
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateEvent failed (%d)"), GetLastError());
+	}
 }
 
 void triggerEvent(TEvent & ev)
 {
-	SetEvent(ev);
+	//SetEvent(ev);
+	if (!SetEvent(ev))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SetEvent failed (%d)"), GetLastError());
+		//return;
+	}
 }
 
 void waitEvent(TEvent & ev)
@@ -69,7 +79,7 @@ void waitEvent(TEvent & ev)
 	//WaitForSingleObject(
 	//	ev, // event handle
 	//	INFINITE);    // indefinite wait
-	Sleep(3);
+	Sleep(1);
 }
 
 void resetEvent(TEvent & ev)
@@ -96,11 +106,15 @@ JSONRPCClient::~JSONRPCClient()
 	destroyEvent(reqDone);
 }
 
-bool JSONRPCClient::isLastRequestOk(void)
+bool JSONRPCClient::haveResponse(void) const
+{
+	return gotResponse;
+}
+bool JSONRPCClient::isLastRequestOk(void) const
 {
 	return allOk;
 }
-std::vector<MessageData>const& JSONRPCClient::getResponse(void)
+std::vector<MessageData>const& JSONRPCClient::getResponse(void) const
 {
 	return response;
 }
@@ -114,6 +128,7 @@ void JSONRPCClient::setURL(std::string const& url)
 void JSONRPCClient::sendRPC(std::string const& method, std::map<std::string, std::string> const& params)
 {
 	resetEvent(reqDone);
+	gotResponse = false;
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TSharedPtr<FJsonObject> JsonParams = MakeShareable(new FJsonObject());
 
@@ -139,12 +154,12 @@ void JSONRPCClient::sendRPC(std::string const& method, std::map<std::string, std
 	Request->SetContentAsString(OutputString);
 	Request->ProcessRequest();
 	// TODO: play a bit with signals to get the output from the request.
-	waitEvent(reqDone);
 }
 
 void JSONRPCClient::sendRPC(std::string const& method, std::vector<MessageData> const& params)
 {
 	resetEvent(reqDone);
+	gotResponse = false;
 	unsigned int maxK = params.size();
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TArray<TSharedPtr<FJsonValue>> JsonMsgArray;
@@ -184,9 +199,7 @@ void JSONRPCClient::sendRPC(std::string const& method, std::vector<MessageData> 
 	Request->SetHeader("Content-Type", "application/json");
 	Request->SetContentAsString(OutputString);
 	Request->ProcessRequest();
-
 	// TODO: play a bit with signals to get the output from the request.
-	waitEvent(reqDone);
 }
 
 void JSONRPCClient::sendRPC(std::string const& method, std::vector<MessageData> const& params, std::vector<MessageData> & responseP)
@@ -231,6 +244,7 @@ void JSONRPCClient::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr
 		// Handle error here
 		this->allOk = false;
 	}
-	triggerEvent(reqDone);
+	this->gotResponse = true;
+	triggerEvent(this->reqDone);
 }
 	
