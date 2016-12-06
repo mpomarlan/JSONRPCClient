@@ -10,6 +10,7 @@
 
 #include <Http.h>
 #include <Json.h>
+#include <Event.h>
 
 typedef struct
 {
@@ -23,7 +24,21 @@ class JSONRPCClient
 
 	std::string URL;
 
+        FEvent reqDone;
+
+        bool allOk;
+        std::vector<MessageData> response;
+
 public:
+
+        bool isLastRequestOk(void)
+        {
+            return allOk;
+        }
+        std::vector<MessageData>const& getResponse(void)
+        {
+            return response;
+        }
 
 	void setURL(std::string const& url)
 	{
@@ -31,8 +46,9 @@ public:
 		URL = url;
 	}
 
-	void SendRPC(std::string const& method, std::map<std::string, std::string> const& params, std::map<std::string, std::string> & result)
+	void sendRPC(std::string const& method, std::map<std::string, std::string> const& params)
 	{
+                reqDone.Reset();
 		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 		TSharedPtr<FJsonObject> JsonParams = MakeShareable(new FJsonObject());
 
@@ -57,17 +73,12 @@ public:
 		Request->SetContentAsString(OutputString);
 		Request->ProcessRequest();
                 // TODO: play a bit with signals to get the output from the request.
-                result.clear();
+                reqDone.Wait();
 	}
 
-        void SendRPC(std::string const& method, std::map<std::string, std::string> const& params)
-        {
-            std::map<std::string, std::string> result;
-            SendRPC(method, params, result);
-        }
-
-	void SendRPC(std::string const& method, std::vector<MessageData> const& params, std::vector<MessageData> & response)
+	void sendRPC(std::string const& method, std::vector<MessageData> const& params)
 	{
+                reqDone.Reset();
 		unsigned int maxK = params.size();
 		TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 		TArray<TSharedPtr<FJsonValue>> JsonMsgArray;
@@ -109,21 +120,24 @@ public:
 		Request->ProcessRequest();
 
                 // TODO: play a bit with signals to get the output from the request.
-                response.clear();
+                reqDone.Wait();
 	}
 
-        void SendRPC(std::string const& method, std::vector<MessageData> const& params)
+        void sendRPC(std::string const& method, std::vector<MessageData> const& params, std::vector<MessageData> & responseP)
         {
-            std::vector<MessageData> response;
-            SendRPC(method, params, response);
+            sendRPC(method, params);
+            responseP.clear();
+            responseP = response;
         }
 
+private:
 	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 	{
 		//UE_LOG(LogTemp, Error, TEXT("Yay, have response %s %d."), *(Response->GetContentType()), bWasSuccessful);
 		//if (bWasSuccessful && Response->GetContentType() == "application/json")
 		if (bWasSuccessful && Response->GetContentType() == "text/plain; charset=utf-8")
 		{
+                        this->allOk = true;
 			TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 			TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(Response->GetContentAsString());
 			FJsonSerializer::Deserialize(JsonReader, JsonObject);
@@ -139,7 +153,9 @@ public:
 		else
 		{
 			// Handle error here
+                        this->allOk = false;
 		}
+                reqDone.Trigger();
 	}
 
 };
