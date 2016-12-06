@@ -26,7 +26,7 @@ public class JSONRPCClient : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core", "CoreUObject", "Engine", "InputCore", "Http", "Json", "JsonUtilities"
+				"Core"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -36,9 +36,9 @@ public class JSONRPCClient : ModuleRules
 			new string[]
 			{
 				"CoreUObject",
-				"Engine",
+				"Engine", "InputCore",
 				"Slate",
-				"SlateCore",
+				"SlateCore", "Http", "Json", "JsonUtilities"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

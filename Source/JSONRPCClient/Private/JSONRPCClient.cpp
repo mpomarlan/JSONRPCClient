@@ -22,6 +22,69 @@ IMPLEMENT_MODULE(FJSONRPCClientModule, JSONRPCClient)
 
 
 
+#ifdef __linux__
+void initEvent(TEvent & ev)
+{
+	//Nothing to do here on Linux;;
+}
+
+void triggerEvent(TEvent & ev)
+{
+	ev.Trigger();
+}
+
+void waitEvent(TEvent & ev)
+{
+	ev.Wait();
+}
+
+void resetEvent(TEvent & ev)
+{
+	ev.Reset();
+}
+
+void destroyEvent(TEvent & ev)
+{
+	//Nothing to do here on Linux;;
+}
+
+#else
+void initEvent(TEvent & ev)
+{
+	ev = CreateEvent(
+		NULL,               // default security attributes
+		true,               // manual-reset event
+		false,              // initial state is nonsignaled
+		TEXT("WriteEvent")  // object name
+	);
+}
+
+void triggerEvent(TEvent & ev)
+{
+	SetEvent(ev);
+}
+
+void waitEvent(TEvent & ev)
+{
+	//WaitForSingleObject(
+	//	ev, // event handle
+	//	INFINITE);    // indefinite wait
+	Sleep(3);
+}
+
+void resetEvent(TEvent & ev)
+{
+	ResetEvent(ev);
+}
+
+void destroyEvent(TEvent & ev)
+{
+	CloseHandle(ev);
+}
+
+#endif
+
+
 
 JSONRPCClient::JSONRPCClient()
 {

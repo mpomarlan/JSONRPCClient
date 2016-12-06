@@ -24,67 +24,29 @@
 
 typedef FPThreadEvent TEvent;
 
-void initEvent(TEvent & ev)
-{
-	//Nothing to do here on Linux;;
-}
+void initEvent(TEvent & ev);
 
-void triggerEvent(TEvent & ev)
-{
-	ev.Trigger();
-}
+void triggerEvent(TEvent & ev);
 
-void waitEvent(TEvent & ev)
-{
-	ev.Wait();
-}
+void waitEvent(TEvent & ev);
 
-void resetEvent(TEvent & ev)
-{
-	ev.Reset();
-}
+void resetEvent(TEvent & ev);
 
-void destroyEvent(TEvent & ev)
-{
-	//Nothing to do here on Linux;;
-}
+void destroyEvent(TEvent & ev);
 
 #else
 #include <Windows.h>
 typedef void* TEvent;
 
-void initEvent(TEvent & ev)
-{
-	ev = CreateEvent(
-		NULL,               // default security attributes
-		true,               // manual-reset event
-		false,              // initial state is nonsignaled
-		TEXT("WriteEvent")  // object name
-	);
-}
+void initEvent(TEvent & ev);
 
-void triggerEvent(TEvent & ev)
-{
-	SetEvent(ev);
-}
+void triggerEvent(TEvent & ev);
 
-void waitEvent(TEvent & ev)
-{
-	WaitForSingleObject(
-		ev, // event handle
-		INFINITE);    // indefinite wait
-}
+void waitEvent(TEvent & ev);
 
-void resetEvent(TEvent & ev)
-{
-	ResetEvent(ev);
-}
+void resetEvent(TEvent & ev);
 
-void destroyEvent(TEvent & ev)
-{
-	CloseHandle(ev);
-}
-
+void destroyEvent(TEvent & ev);
 #endif
 
 
