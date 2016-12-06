@@ -94,7 +94,7 @@ typedef struct
 	std::map<std::string, std::string> params;
 }MessageData;
 
-class JSONRPCClient
+class JSONRPCCLIENT_API JSONRPCClient
 {
 	int currentId;
 
