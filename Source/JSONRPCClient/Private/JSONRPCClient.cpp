@@ -94,7 +94,7 @@ void destroyEvent(TEvent & ev)
 
 #endif
 
-
+bool runningRussianHaxx = true;
 
 JSONRPCClient::JSONRPCClient()
 {
@@ -103,6 +103,7 @@ JSONRPCClient::JSONRPCClient()
 
 JSONRPCClient::~JSONRPCClient()
 {
+	runningRussianHaxx = false;
 	destroyEvent(reqDone);
 }
 
@@ -123,6 +124,7 @@ void JSONRPCClient::setURL(std::string const& url)
 {
 	currentId = 0;
 	URL = url;
+	runningRussianHaxx = true;
 }
 
 void JSONRPCClient::sendRPC(std::string const& method, std::map<std::string, std::string> const& params)
@@ -213,6 +215,8 @@ void JSONRPCClient::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr
 {
 	//UE_LOG(LogTemp, Error, TEXT("Yay, have response %s %d."), *(Response->GetContentType()), bWasSuccessful);
 	//if (bWasSuccessful && Response->GetContentType() == "application/json")
+	if (!runningRussianHaxx)
+		return;
 	if (bWasSuccessful && Response->GetContentType() == "text/plain; charset=utf-8")
 	{
 		this->allOk = true;
