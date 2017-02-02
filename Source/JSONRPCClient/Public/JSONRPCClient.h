@@ -11,6 +11,7 @@
 #include <Http.h>
 #include <Json.h>
 
+#if 0
 #ifdef __linux__
 #include <CoreObject.h>
 #include <CoreUObject.h>
@@ -48,7 +49,7 @@ void resetEvent(TEvent & ev);
 
 void destroyEvent(TEvent & ev);
 #endif
-
+#endif
 
 typedef struct
 {
@@ -62,7 +63,7 @@ class JSONRPCCLIENT_API JSONRPCClient
 
 	std::string URL;
 
-	TEvent reqDone;
+	//TEvent reqDone;
 
 	bool allOk;
 	bool gotResponse;
