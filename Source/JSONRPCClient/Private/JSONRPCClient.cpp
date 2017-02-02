@@ -21,7 +21,7 @@ IMPLEMENT_MODULE(FJSONRPCClientModule, JSONRPCClient)
 
 
 
-
+#if 0
 #ifdef __linux__
 void initEvent(TEvent & ev)
 {
@@ -93,18 +93,19 @@ void destroyEvent(TEvent & ev)
 }
 
 #endif
+#endif
 
 bool runningRussianHaxx = true;
 
 JSONRPCClient::JSONRPCClient()
 {
-	initEvent(reqDone);
+	//initEvent(reqDone);
 }
 
 JSONRPCClient::~JSONRPCClient()
 {
 	runningRussianHaxx = false;
-	destroyEvent(reqDone);
+	//destroyEvent(reqDone);
 }
 
 bool JSONRPCClient::haveResponse(void) const
@@ -129,7 +130,7 @@ void JSONRPCClient::setURL(std::string const& url)
 
 void JSONRPCClient::sendRPC(std::string const& method, std::map<std::string, std::string> const& params)
 {
-	resetEvent(reqDone);
+	//resetEvent(reqDone);
 	gotResponse = false;
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TSharedPtr<FJsonObject> JsonParams = MakeShareable(new FJsonObject());
@@ -160,7 +161,7 @@ void JSONRPCClient::sendRPC(std::string const& method, std::map<std::string, std
 
 void JSONRPCClient::sendRPC(std::string const& method, std::vector<MessageData> const& params)
 {
-	resetEvent(reqDone);
+	//resetEvent(reqDone);
 	gotResponse = false;
 	unsigned int maxK = params.size();
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
@@ -209,6 +210,8 @@ void JSONRPCClient::sendRPC(std::string const& method, std::vector<MessageData> 
 	sendRPC(method, params);
 	responseP.clear();
 	responseP = response;
+	//Leave this commented out; this way, we can see via duplicate messages whether the comm is pushing too fast
+	//response.clear();
 }
 
 void JSONRPCClient::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
@@ -226,12 +229,16 @@ void JSONRPCClient::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr
 		TSharedPtr<FJsonObject> JsonMessagesObject = JsonObject->GetObjectField(TEXT("result"))->GetObjectField(TEXT("messages"));
 
 		this->response.clear();
+		//if(Response->GetContentLength())
+		//    UE_LOG(LogTemp, Log, TEXT("!! %s"), *Response->GetContentAsString());
 		for (auto it = JsonMessagesObject->Values.CreateIterator(); it; ++it)
 		{
 			MessageData aux;
 			aux.topicName = std::string(TCHAR_TO_UTF8(*(it.Key())));
-			for (auto cit = it->Value->AsObject()->Values.CreateIterator(); it; ++it)
+			UE_LOG(LogTemp, Log, TEXT("JSON Topic %s"), *(it.Key()));
+			for (auto cit = it->Value->AsObject()->Values.CreateIterator(); cit; ++cit)
 			{
+				UE_LOG(LogTemp, Log, TEXT("    %s : %s"), *(cit.Key()), *(cit->Value->AsString()));
 				aux.params.insert(std::pair<std::string, std::string>(std::string(TCHAR_TO_UTF8(*(cit.Key()))), std::string(TCHAR_TO_UTF8(*(cit->Value->AsString())))));
 			}
 			response.push_back(aux);
@@ -249,6 +256,6 @@ void JSONRPCClient::OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr
 		this->allOk = false;
 	}
 	this->gotResponse = true;
-	triggerEvent(this->reqDone);
+	//triggerEvent(this->reqDone);
 }
 	
